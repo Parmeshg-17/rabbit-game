@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Talking Rabbit - Interactive Kids App</title>
+    <style>
+        /* ===== RESET & GLOBAL STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+        }
+
+        /* ===== WELCOME SCREEN ===== */
+        #welcome-screen {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1000;
+        }
+
+        #welcome-image {
+            width: 90%;
+            max-width: 400px;
+            border-radius: 30px;
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: float 3s ease-in-out infinite;
+            margin-bottom: 40px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        #play-button {
+            font-size: 32px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: white;
+            background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%);
+            border: none;
+            border-radius: 60px;
+            padding: 25px 60px;
+            cursor: pointer;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.2),
+                        0 10px 30px rgba(255, 20, 147, 0.4);
+            animation: pulse 2s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.2), 0 10px 30px rgba(255, 20, 147, 0.4); }
+            50% { transform: scale(1.08); box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.2), 0 15px 40px rgba(255, 20, 147, 0.6); }
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-effect 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-effect {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* ===== MAIN APP SCREEN ===== */
+        #main-screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        #main-screen.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        #video-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .video-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .video-bg.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* ===== TAP ZONES ===== */
+        .tap-zone {
+            position: absolute;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        #head-zone {
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+        }
+
+        #body-zone {
+            top: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 200px;
+            border-radius: 50%;
+        }
+
+        #feet-zone {
+            bottom: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 100px;
+            border-radius: 50%;
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(-50%) rotate(0deg); }
+            25% { transform: translateX(-50%) translateX(-10px) rotate(-5deg); }
+            75% { transform: translateX(-50%) translateX(10px) rotate(5deg); }
+        }
+
+        /* ===== PARTICLES ===== */
+        .particle {
+            position: fixed;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 100;
+            animation: float-up 1.5s ease-out forwards;
+        }
+
+        @keyframes float-up {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+        }
+
+        /* ===== FALLING EMOJIS ===== */
+        .falling-emoji {
+            position: fixed;
+            font-size: 32px;
+            pointer-events: none;
+            z-index: 50;
+            animation: fall 4s ease-in forwards;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* ===== STATUS INDICATOR ===== */
+        #status-indicator {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #status-indicator.visible {
+            opacity: 1;
+        }
+
+        /* ===== CONTROL BUTTONS ===== */
+        #control-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            z-index: 15;
+        }
+
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 5px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            cursor: pointer;
+            box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.2),
+                        0 8px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        #laughing-btn {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border-color: #f59e0b;
+        }
+
+        #mic-btn {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%);
+            border-color: #ff1493;
+            position: relative;
+        }
+
+        #mic-btn::before {
+            content: '';
+            width: 20px;
+            height: 28px;
+            background: white;
+            border-radius: 10px 10px 0 0;
+            position: absolute;
+            top: 18px;
+        }
+
+        #mic-btn::after {
+            content: '';
+            width: 28px;
+            height: 20px;
+            border: 3px solid white;
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            position: absolute;
+            top: 42px;
+        }
+
+        #mic-btn.listening {
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+            border-color: #8b5cf6;
+            animation: pulse-mic 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-mic {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        #mic-btn.speaking {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border-color: #f59e0b;
+            animation: glow-mic 1s ease-in-out infinite;
+        }
+
+        @keyframes glow-mic {
+            0%, 100% { box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.2), 0 8px 20px rgba(251, 191, 36, 0.4); }
+            50% { box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.2), 0 8px 30px rgba(251, 191, 36, 0.8); }
+        }
+
+        #music-btn {
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+            border-color: #8b5cf6;
+        }
+
+        /* ===== EXIT DIALOG ===== */
+        #exit-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #exit-dialog.active {
+            display: flex;
+        }
+
+        .dialog-box {
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 350px;
+        }
+
+        .dialog-box h2 {
+            color: white;
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .dialog-btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .dialog-btn:active {
+            transform: scale(0.95);
+        }
+
+        #yes-btn {
+            background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%);
+            color: white;
+        }
+
+        #no-btn {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+        }
+
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            #welcome-image {
+                max-width: 320px;
+            }
+
+            .control-btn {
+                width: 70px;
+                height: 70px;
+            }
+
+            #mic-btn {
+                width: 80px;
+                height: 80px;
+            }
+
+            #control-panel {
+                gap: 25px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            #welcome-image {
+                max-width: 280px;
+            }
+
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 28px;
+            }
+
+            #mic-btn {
+                width: 70px;
+                height: 70px;
+            }
+
+            #control-panel {
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- WELCOME SCREEN -->
+    <div id="welcome-screen">
+        <img id="welcome-image" src="tom_welcome.jpg" alt="Talking Rabbit">
+        <button id="play-button">▶ Play</button>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <div id="main-screen">
+        <div id="video-container">
+            <video id="video-standing" class="video-bg" src="tom_standing.mp4" muted loop playsinline preload="auto"></video>
+            <video id="video-listening" class="video-bg hidden" src="tom_listing.mp4" muted playsinline preload="auto"></video>
+            <video id="video-talking" class="video-bg hidden" src="tom_talking.mp4" muted playsinline preload="auto"></video>
+            <video id="video-laughing" class="video-bg hidden" src="laughing.mp4" muted loop playsinline preload="auto"></video>
+            <video id="video-music" class="video-bg hidden" src="music.mp4" muted loop playsinline preload="auto"></video>
+        </div>
+
+        <!-- TAP ZONES -->
+        <div id="head-zone" class="tap-zone"></div>
+        <div id="body-zone" class="tap-zone"></div>
+        <div id="feet-zone" class="tap-zone"></div>
+
+        <!-- STATUS INDICATOR -->
+        <div id="status-indicator"></div>
+
+        <!-- CONTROL PANEL -->
+        <div id="control-panel">
+            <div id="laughing-btn" class="control-btn">😄</div>
+            <div id="mic-btn" class="control-btn"></div>
+            <div id="music-btn" class="control-btn">🎵</div>
+        </div>
+    </div>
+
+    <!-- EXIT DIALOG -->
+    <div id="exit-dialog">
+        <div class="dialog-box">
+            <h2>Do you want to exit?</h2>
+            <div class="dialog-buttons">
+                <button id="yes-btn" class="dialog-btn">Yes</button>
+                <button id="no-btn" class="dialog-btn">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HIDDEN AUDIO ELEMENTS -->
+    <audio id="laughing-audio" src="laughing.wav" preload="auto"></audio>
+    <audio id="music-audio" src="music.wav" preload="auto"></audio>
+
+    <script>
+        // ===== STATE MANAGEMENT =====
+        const AppState = {
+            WELCOME: 'welcome',
+            IDLE: 'idle',
+            LISTENING: 'listening',
+            TALKING: 'talking',
+            LAUGHING: 'laughing',
+            MUSIC: 'music'
+        };
+
+        let currentState = AppState.WELCOME;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let audioContext = null;
+        let recordedAudioBuffer = null;
+
+        // ===== DOM ELEMENTS =====
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const mainScreen = document.getElementById('main-screen');
+        const playButton = document.getElementById('play-button');
+        const statusIndicator = document.getElementById('status-indicator');
+        const exitDialog = document.getElementById('exit-dialog');
+
+        // Videos
+        const videoStanding = document.getElementById('video-standing');
+        const videoListening = document.getElementById('video-listening');
+        const videoTalking = document.getElementById('video-talking');
+        const videoLaughing = document.getElementById('video-laughing');
+        const videoMusic = document.getElementById('video-music');
+
+        // Tap zones
+        const headZone = document.getElementById('head-zone');
+        const bodyZone = document.getElementById('body-zone');
+        const feetZone = document.getElementById('feet-zone');
+
+        // Control buttons
+        const laughingBtn = document.getElementById('laughing-btn');
+        const micBtn = document.getElementById('mic-btn');
+        const musicBtn = document.getElementById('music-btn');
+
+        // Audio elements
+        const laughingAudio = document.getElementById('laughing-audio');
+        const musicAudio = document.getElementById('music-audio');
+
+        // Dialog buttons
+        const yesBtn = document.getElementById('yes-btn');
+        const noBtn = document.getElementById('no-btn');
+
+        // ===== UTILITY FUNCTIONS =====
+        function vibrate(duration = 50) {
+            if (navigator.vibrate) {
+                navigator.vibrate(duration);
+            }
+        }
+
+        function showStatus(message) {
+            statusIndicator.textContent = message;
+            statusIndicator.classList.add('visible');
+        }
+
+        function hideStatus() {
+            statusIndicator.classList.remove('visible');
+        }
+
+        function switchVideo(targetVideo) {
+            [videoStanding, videoListening, videoTalking, videoLaughing, videoMusic].forEach(video => {
+                if (video === targetVideo) {
+                    video.classList.remove('hidden');
+                    video.play().catch(e => console.error('Video play error:', e));
+                } else {
+                    video.classList.add('hidden');
+                    video.pause();
+                }
+            });
+        }
+
+        function createRipple(event, button) {
+            const ripple = document.createElement('span');
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = event.clientX - rect.left - size / 2;
+            const y = event.clientY - rect.top - size / 2;
+
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.classList.add('ripple');
+
+            button.appendChild(ripple);
+
+            setTimeout(() => ripple.remove(), 600);
+        }
+
+        function createParticle(x, y) {
+            const emojis = ['⭐', '💫', '✨', '🌟', '💥', '❤️', '💛', '💚', '💙', '💜'];
+            const particle = document.createElement('div');
+            particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            particle.className = 'particle';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            document.body.appendChild(particle);
+
+            setTimeout(() => particle.remove(), 1500);
+        }
+
+        function createFallingEmojis(emoji, count = 15) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const fallingEmoji = document.createElement('div');
+                    fallingEmoji.textContent = emoji;
+                    fallingEmoji.className = 'falling-emoji';
+                    fallingEmoji.style.left = Math.random() * 100 + '%';
+                    fallingEmoji.style.animationDelay = Math.random() * 0.5 + 's';
+                    document.body.appendChild(fallingEmoji);
+
+                    setTimeout(() => fallingEmoji.remove(), 4000);
+                }, i * 100);
+            }
+        }
+
+        function shakeElement(element) {
+            element.classList.add('shake');
+            setTimeout(() => element.classList.remove('shake'), 500);
+        }
+
+        function playAudioLooped(audio, times) {
+            let playCount = 0;
+            
+            audio.currentTime = 0;
+            audio.play().catch(e => console.error('Audio play error:', e));
+            
+            const handleEnded = () => {
+                playCount++;
+                if (playCount < times) {
+                    audio.currentTime = 0;
+                    audio.play().catch(e => console.error('Audio play error:', e));
+                } else {
+                    audio.removeEventListener('ended', handleEnded);
+                    returnToIdle();
+                }
+            };
+            
+            audio.addEventListener('ended', handleEnded);
+        }
+
+        function returnToIdle() {
+            currentState = AppState.IDLE;
+            switchVideo(videoStanding);
+            hideStatus();
+            micBtn.classList.remove('listening', 'speaking');
+        }
+
+        // ===== TAP ZONE HANDLERS =====
+        function handleTapZone(zone, event) {
+            if (currentState !== AppState.IDLE) return;
+
+            const messages = [
+                "Hehe! That tickles!",
+                "Ha ha ha!",
+                "Stop it! Haha!",
+                "Tee hee!",
+                "That's funny!",
+                "Ooh! Hehe!"
+            ];
+
+            vibrate(100);
+            shakeElement(zone);
+            showStatus(messages[Math.floor(Math.random() * messages.length)]);
+
+            const rect = zone.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const offsetX = (Math.random() - 0.5) * 80;
+                    const offsetY = (Math.random() - 0.5) * 80;
+                    createParticle(centerX + offsetX, centerY + offsetY);
+                }, i * 100);
+            }
+
+            setTimeout(hideStatus, 2000);
+        }
+
+        headZone.addEventListener('click', (e) => handleTapZone(headZone, e));
+        bodyZone.addEventListener('click', (e) => handleTapZone(bodyZone, e));
+        feetZone.addEventListener('click', (e) => handleTapZone(feetZone, e));
+
+        // ===== PLAY BUTTON HANDLER =====
+        playButton.addEventListener('click', function(e) {
+            createRipple(e, playButton);
+            vibrate();
+
+            setTimeout(() => {
+                welcomeScreen.style.display = 'none';
+                mainScreen.classList.add('active');
+                currentState = AppState.IDLE;
+                videoStanding.play().catch(e => console.error('Video play error:', e));
+                history.pushState({ page: 'main' }, '', '');
+            }, 300);
+        });
+
+        // ===== LAUGHING BUTTON HANDLER =====
+        laughingBtn.addEventListener('click', () => {
+            if (currentState !== AppState.IDLE) return;
+
+            vibrate();
+            currentState = AppState.LAUGHING;
+            switchVideo(videoLaughing);
+            showStatus("Ha ha ha ha!");
+            createFallingEmojis('😂', 15);
+            playAudioLooped(laughingAudio, 2);
+        });
+
+        // ===== MIC BUTTON HANDLER =====
+        micBtn.addEventListener('click', async () => {
+            if (currentState === AppState.LISTENING || currentState === AppState.TALKING) return;
+            if (currentState !== AppState.IDLE) return;
+
+            vibrate();
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+
+                currentState = AppState.LISTENING;
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    
+                    if (!audioContext) {
+                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    
+                    audioContext.decodeAudioData(arrayBuffer, (buffer) => {
+                        recordedAudioBuffer = buffer;
+                        playbackWithPitch();
+                    });
+                };
+
+                switchVideo(videoListening);
+                micBtn.classList.add('listening');
+                showStatus("Listening...");
+                
+                mediaRecorder.start();
+
+                setTimeout(() => {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                    }
+                }, 5000);
+
+            } catch (error) {
+                console.error('Microphone access error:', error);
+                alert('Please allow microphone access to use this feature!');
+                returnToIdle();
+            }
+        });
+
+        function playbackWithPitch() {
+            if (!recordedAudioBuffer) return;
+
+            currentState = AppState.TALKING;
+            switchVideo(videoTalking);
+            micBtn.classList.remove('listening');
+            micBtn.classList.add('speaking');
+            showStatus("Rabbit speaking...");
+
+            const source = audioContext.createBufferSource();
+            source.buffer = recordedAudioBuffer;
+            source.playbackRate.value = 1.5;
+            source.connect(audioContext.destination);
+
+            source.onended = () => {
+                returnToIdle();
+            };
+
+            source.start();
+        }
+
+        // ===== MUSIC BUTTON HANDLER =====
+        musicBtn.addEventListener('click', () => {
+            if (currentState !== AppState.IDLE) return;
+
+            vibrate();
+            currentState = AppState.MUSIC;
+            switchVideo(videoMusic);
+            showStatus("Let's dance!");
+            createFallingEmojis('🎵', 15);
+            playAudioLooped(musicAudio, 2);
+        });
+
+        // ===== BACK BUTTON HANDLER =====
+        window.addEventListener('popstate', (event) => {
+            if (mainScreen.classList.contains('active')) {
+                event.preventDefault();
+                exitDialog.classList.add('active');
+                history.pushState({ page: 'main' }, '', '');
+            }
+        });
+
+        yesBtn.addEventListener('click', () => {
+            vibrate();
+            exitDialog.classList.remove('active');
+            mainScreen.classList.remove('active');
+            welcomeScreen.style.display = 'flex';
+            currentState = AppState.WELCOME;
+            returnToIdle();
+        });
+
+        noBtn.addEventListener('click', () => {
+            vibrate();
+            exitDialog.classList.remove('active');
+        });
+
+        // ===== PREVENT DOUBLE-TAP ZOOM =====
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (event) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // ===== PRELOAD VIDEOS =====
+        window.addEventListener('load', () => {
+            [videoStanding, videoListening, videoTalking, videoLaughing, videoMusic].forEach(video => {
+                video.load();
+            });
+        });
+    </script>
+</body>
+</html>
